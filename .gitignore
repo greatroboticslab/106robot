@@ -1,0 +1,62 @@
+# .gitignore for 106robot repository
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# IDEs / editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Mypy
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints
+
+# dotenv
+.env
+
+# Arduino / embedded artifacts
+*.hex
+*.elf
+*.bin
+
+# Binary artifacts
+*.so
+*.dylib
+
+# Secrets
+credentials.json
+secret_key.txt
+
+# Keep data files tracked by default; add specific ignores here if desired
+# e.g., data/*.csv
