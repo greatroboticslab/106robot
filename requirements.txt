@@ -1,42 +1,8 @@
-# Computer Vision and Image Processing
-opencv-python>=4.5.0
-numpy>=1.19.0
-
-# Web Framework
-Flask>=2.0.0
-
-# MQTT Communication
-paho-mqtt>=1.5.0
-
-# GPS Integration
-gpsd-py3>=0.3.0
-
-# Navigation and Coordinate Transformation
-pyproj>=3.0.0
-
-# Hardware Interface (I2C)
-smbus>=1.1
-
-# System and Hardware Access
-RPi.GPIO>=0.7.0
-
-# Data Processing (usually included with Python, but listed for completeness)
-# csv - built-in
-# json - built-in
-# base64 - built-in
-# datetime - built-in
-# threading - built-in
-# multiprocessing - built-in
-# time - built-in
-# math - built-in
-# sys - built-in
-# os - built-in
-# logging - built-in
-# serial - may need pyserial if using serial communication
-
-# Optional: Serial communication (uncomment if needed)
-# pyserial>=3.4
-
-# Optional: Additional scientific computing (if needed for advanced features)
-# scipy>=1.6.0
-# matplotlib>=3.3.0
+numpy==1.26.4
+pyproj==3.6.1
+gpsd-py3==0.3.0
+paho-mqtt==2.1.0
+opencv-python==4.10.0.84
+Flask==3.0.3
+pyserial==3.5
+smbus2==0.4.3
