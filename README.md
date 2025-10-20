@@ -1,5 +1,6 @@
 # 106 Robot Control System 
 This are all software components that relate to the **106 robot**.
+```  
   Arduino/
   ├── ESP32_DEV_CONTROLS.ino
   ├── librariess
@@ -11,6 +12,7 @@ This are all software components that relate to the **106 robot**.
   ├── auto_navigation.py
   ├── requirements.txt
   └── README.md
+```
 
 ## User Interface Controls
 IMPORTANT: accommodated for Raspberry's Thonny (Python IDE).
