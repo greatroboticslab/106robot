@@ -78,6 +78,10 @@ void setup()
 {
     pinMode(PUMP_PIN, OUTPUT);
 
+    // Initialize RoboClaw
+    roboclaw.begin(38400);
+    delay(5000);
+
     /* Debugging: Due to both roboclaw and serial monitor using Serial 0,
            - Comment our instances of roboclaw
            - Uncomment that that contain serial.print or .println
@@ -93,11 +97,7 @@ void setup()
     client.setServer(mqtt_server, mqtt_port);
     client.setCallback(callback);
     delay(500);
-
-    // Initialize RoboClaw
-    roboclaw.begin(38400);
-    delay(500);
-
+    
     // Initialize Ibus
     ibus.begin(Serial2);
     delay(500);

@@ -93,3 +93,73 @@ def on_connect(client, userdata, flags, rc):
                           (MQTT_TOPIC_DATA, 0)])
     else:
         print(f"Failed to connect to MQTT server, return code {rc}")
+
+# CSV & Moisture info
+# TO-DO
+
+def on_message(client, userdata, msg):
+    try:
+        if msg.topic == MQTT_TOPIC_CAMERA:
+            camera_data = json.loads(msg.payload.decode())
+            image_b64 = camera_data.get('image', '')
+            if image_b64:
+                image_bytes = base64.b64decode(image_b64)
+                np_arr = np.frombuffer(image_bytes, np.uint8)
+                image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                if image is not None:
+                    camera_frame_queue.put(image)
+                else:
+                    print("Failed to decode camera image.")
+            else:
+                print("No image data found in camera message.")
+        elif msg.topic == MQTT_TOPIC_DATA:
+            sensor_data = json.loads(msg.payload.decode())
+            mac = sensor_data.get("mac")
+            value = sensor_data.get("value")
+        
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            #print(f"Received | {timestamp}, {mac}, {value}")
+            writer.writerow([timestamp, mac, value])
+            csv_file.flush()
+            
+            cmd_value = int(value)
+            
+            """
+            # Not really using this anymore
+            if cmd_value < 10:
+                client.publish(MQTT_TOPIC_PUMP, "1")
+            else:
+                client.publish(MQTT_TOPIC_PUMP, "0")
+            """
+            
+            # Make a list of zones for the mac addresses
+            # If value in zone A, B, etc is low
+                # Set Zone pump on "zone cmd"
+            # else
+                # Set zones pump off "zone cmd"
+                
+            zone = None
+            for z, macs in zone_macs.items():
+                if mac in macs:
+                    zone = z
+                    break
+            
+            # Do actions based on findings
+            if zone:
+                threshold = zone_threshold[zone]
+                if value < threshold:
+                    pump_cmd = f"{zone} 1"
+                    print(f"[ZONE {zone}] Moisture below threshold. Turning Pump ON")
+                    client.publish(MQTT_TOPIC_REMOTE_PUMP, pump_cmd)
+                    pump_states[zone] = True
+                elif value >= threshold:
+                    pump_cmd = f"{zone} 0"
+                    print(f"[ZONE {zone}] Moisture good. Turning Pump OFF")
+                    client.publish(MQTT_TOPIC_REMOTE_PUMP, pump_cmd)
+                    pump_states[zone] = False
+                
+            else:
+                print(f"Unknown MAC address {mac}. Ignoring.")
+
+    except Exception as e:
+        print(f"Error handling message on topic {msg.topic}: {e}")
