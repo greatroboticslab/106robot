@@ -133,18 +133,19 @@ void ibusLoop()
 
   // Below write any Ibus interaction with components
   // FOR: pump
-  if (pump_channel == 100){
-    pump_flag = true;
-  } 
-  else if (pump_channel == 0){
-    pump_flag = false;
+  if(mode = 0){
+    if (pump_channel == 100){
+      pump_flag = true;
+    } 
+    else if (pump_channel == 0){
+      pump_flag = false;
+    }
+    else{
+      pump_flag = false;
+      // Serial.print("Pump_Channel is using the wrong Channel");
+    }
+    pumpControls(pump_flag);
   }
-  else{
-    pump_flag = false;
-    // Serial.print("Pump_Channel is using the wrong Channel");
-  }
-  pumpControls(pump_flag);
-
   //FOR: drive
   int turn = map(ch1, 0, 126, -63, 63);
   int value = ch2;
@@ -193,7 +194,7 @@ void callback(char* topic, byte* payload, unsigned int length)
 
   // IMPORTAN: Ibus (Remote Control) takes priority. Mode's Switch must 
   //            output 100 for MQTT to take over control
-  if (mode == 100){
+  if (mode != 0){
     // Serial.print("Message arrived ["); Serial.print(topic); Serial.print("]: ");
 
     // Below write any MQTT interaction with components
