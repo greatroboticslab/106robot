@@ -25,9 +25,9 @@ const int STOP_COMMAND = 64;
 const int MAX_COMMAND  = 128;
 const int MIN_COMMAND  = 0;
 // Persistent motion state for MQTT
-// int currentForwardCmd = STOP_COMMAND;
-// int currentTurnCmd = STOP_COMMAND;
-// bool newMqttCommand = false;
+int currentForwardCmd = STOP_COMMAND;
+int currentTurnCmd = STOP_COMMAND;
+bool newMqttCommand = false;
 
 
 // ==================== Wifi & MQTT Server details ====================
@@ -86,19 +86,19 @@ void setup()
           - Comment our instances of roboclaw
           - Uncomment that that contain serial.print or .println
   */
-  //Serial.begin(19200);
+  Serial.begin(19200);
   // ---------------------------------------------------------------
   pinMode(PUMP_PIN, OUTPUT);
 
   delay(3000); // Allow power stabilization
 
   // Initialize WiFi + MQTT
-  // setupWiFi();
-  //Serial.println("WiFi initialized.");
+  setupWiFi();
+  Serial.println("WiFi initialized.");
 
-  // client.setServer(mqtt_server, mqtt_port);
-  // client.setCallback(callback);
-  // Serial.println("MQTT initialized.");
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
+  Serial.println("MQTT initialized.");
 
   // Initialize RoboClaw (TX-only)
   Serial1.begin(38400, SERIAL_8N1, -1, 17);
@@ -109,7 +109,7 @@ void setup()
   for (int i = 0; i < 5; i++) { Serial1.write(0x00); delay(10); }
 
   roboclaw.begin(38400);
-  // Serial.println("RoboClaw initialized.");
+  Serial.println("RoboClaw initialized.");
 
   // Add another short delay before touching Serial2 or IBus
   delay(1000);
@@ -118,24 +118,24 @@ void setup()
   Serial2.begin(115200, SERIAL_8N1, IBUS_RX_PIN, -1);
   delay(100);  // small pause helps stabilize
   ibus.begin(Serial2);
-  // Serial.println("iBus receiver initialized.");
+  Serial.println("iBus receiver initialized.");
 
   stopMotors();                 // Ensure motors are stopped
   digitalWrite(PUMP_PIN, LOW);  // Ensure pump are stopped
-  // Serial.println("Motors stopped. System ready.");
+  Serial.println("Motors stopped. System ready.");
 }
 
 void loop() 
 {
     // Serial.println("looping");
   // Reconnect to MQTT broker if not connected
-  // if (!client.connected()) { 
-  //   reconnect(); 
-  //   Serial.println("MQTT Failed. Reconecting.");
-  // }
+  if (!client.connected()) { 
+    Serial.println("MQTT Failed. Reconecting!");
+    reconnect(); 
+  }
 
   // Handle incoming MQTT messages
-  //client.loop();  // Check Callback() for MQTT interaction with components
+  client.loop();  // Check Callback() for MQTT interaction with components
   // Handle incoming Ibus messages
   ibusLoop(); // Check ibusLoop() for full ibus interaction with components
 }
@@ -246,18 +246,20 @@ void callback(char* topic, byte* payload, unsigned int length)
         return;
       }
 
-      String forwardStr = move_message.substring(0, spaceIndex);
-      String turnStr = move_message.substring(spaceIndex + 1);
+      String turnStr = move_message.substring(0, spaceIndex);
+      String forwardStr = move_message.substring(spaceIndex + 1);
 
       // Convert strings to integers
       int forwardCmd = forwardStr.toInt();
       int turnCmd = turnStr.toInt();
 
+      currentForwardCmd = forwardCmd;
+      currentTurnCmd = turnCmd;
+      newMqttCommand = true;
       // Validate command ranges
       if (forwardCmd < MIN_COMMAND || forwardCmd > MAX_COMMAND ||
           turnCmd < MIN_COMMAND || turnCmd > MAX_COMMAND) {
         // Serial.println("Command values out of range. Expected 0-126.");
-        stopMotors();
         return;
       }
 
@@ -391,11 +393,9 @@ void reconnect()
 
     // Attempt to connect with username and password
     if (client.connect("ESP32Client1", "robot", "robot1")) {
-      // Serial.println("connected");
+      Serial.println("connected");
       client.subscribe(MQTT_MOVE_CMD);
       client.subscribe(MQTT_PUMP_CMD);
-      // Serial.print("Subscribed to topic: ");
-      //// Serial.println(topic);
     } else {
       // Serial.print("failed, rc=");
       // Serial.print(client.state());
@@ -404,5 +404,3 @@ void reconnect()
     }
   }
 }
-
-
