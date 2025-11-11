@@ -3,7 +3,7 @@ This are all software components that relate to the **106 robot**.
 ```  
   Arduino/
   ├── ESP32_DEV_CONTROLS.ino
-  ├── librariess
+  ├── libraries
   Raspberry/
   ├── main.py
   ├── GUI.py

@@ -1,4 +1,4 @@
-  /*=========================================
+/*=========================================
   ========== Motor & Pump Controls ==========
   =========================================*/
 
@@ -127,17 +127,24 @@ void setup()
 
 void loop() 
 {
-    // Serial.println("looping");
-  // Reconnect to MQTT broker if not connected
-  if (!client.connected()) { 
-    Serial.println("MQTT Failed. Reconecting!");
-    reconnect(); 
-  }
+  mode = readChannel(5, 0, 100, 0); // Channel 6 on IBus SWB (Manual = 0 (UP),  Auto = 100 (Down))
 
-  // Handle incoming MQTT messages
-  client.loop();  // Check Callback() for MQTT interaction with components
+  if(mode!= 0){
+  // Reconnect to MQTT broker if not connected
+    //Serial.println("Web Mode");
+    if (!client.connected()) { 
+      Serial.println("MQTT Failed. Reconecting!");
+      reconnect(); 
+    } else {
+    // Handle incoming MQTT messages
+      client.loop();  // Check Callback() for MQTT interaction with components
+      delay(500);
+    }
+  }else{
+    //Serial.println("Controller Mode");
   // Handle incoming Ibus messages
-  ibusLoop(); // Check ibusLoop() for full ibus interaction with components
+    ibusLoop(); // Check ibusLoop() for full ibus interaction with components
+  }
 }
 // ====================================================================
 
@@ -151,7 +158,6 @@ void ibusLoop()
   int ch2 = readChannel(1, 0, 126, 64); // Forward / Back
   int ch1 = readChannel(0, 0, 126, 64); // Left / Right
   int arm = readChannel(4, 0, 100, 0);  // Channel 5 on IBus SWA
-  mode = readChannel(5, 0, 100, 0); // Channel 6 on IBus SWB (Manual = 0 (UP),  Auto = 100 (Down))
 
   // Below write any Ibus interaction with components
   // FOR: pump
@@ -236,12 +242,12 @@ void callback(char* topic, byte* payload, unsigned int length)
         move_message += (char)payload[i];
       }
 
-      // Serial.println(move_message);
+      Serial.println(move_message);
 
       // Parse the message assuming format "forward_command side_command"
       int spaceIndex = move_message.indexOf(' ');
       if (spaceIndex == -1) {
-        //Serial.println("Invalid message format. Expected 'forward_command side_command'.");
+        Serial.println("Invalid message format. Expected 'forward_command side_command'.");
         stopMotors();
         return;
       }
@@ -259,15 +265,15 @@ void callback(char* topic, byte* payload, unsigned int length)
       // Validate command ranges
       if (forwardCmd < MIN_COMMAND || forwardCmd > MAX_COMMAND ||
           turnCmd < MIN_COMMAND || turnCmd > MAX_COMMAND) {
-        // Serial.println("Command values out of range. Expected 0-126.");
+          Serial.println("Command values out of range. Expected 0-126.");
         return;
       }
 
       // Debugging output
-      // Serial.print("Forward Command: ");
-      // Serial.print(forwardCmd);
-      // Serial.print(" | Turn Command: ");
-      // Serial.println(turnCmd);
+      Serial.print("Forward Command: ");
+      Serial.print(forwardCmd);
+      Serial.print(" | Turn Command: ");
+      Serial.println(turnCmd);
 
       // Determine if the robot should stop
       if (forwardCmd == STOP_COMMAND && turnCmd == STOP_COMMAND) {
@@ -275,6 +281,7 @@ void callback(char* topic, byte* payload, unsigned int length)
       } else {
         setMotorSpeeds(forwardCmd, turnCmd);
       }
+
     }
   }
 }
@@ -388,7 +395,7 @@ void setupWiFi()
 // Description: Reconnects to the MQTT broker if disconnected.
 void reconnect() 
 {
-  while (!client.connected()) {
+  
     // Serial.print("Attempting MQTT connection...");
 
     // Attempt to connect with username and password
@@ -397,10 +404,9 @@ void reconnect()
       client.subscribe(MQTT_MOVE_CMD);
       client.subscribe(MQTT_PUMP_CMD);
     } else {
-      // Serial.print("failed, rc=");
-      // Serial.print(client.state());
-      // Serial.println(" try again in 5 seconds");
-      delay(5000);
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
     }
-  }
+  
 }
