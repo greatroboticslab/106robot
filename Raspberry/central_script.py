@@ -17,7 +17,7 @@ import csv
 
 #.py files
 import IMU  # Importing the IMU module
-import GUI
+import GUI  # import
 
 from flask import Flask, Response, jsonify, request, render_template_string
 import logging
