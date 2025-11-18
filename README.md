@@ -1,64 +1,29 @@
-# 106 Robot Control System 
-This are all software components that relate to the **106 robot**.
-```  
-  Arduino/
-  ├── ESP32_DEV_CONTROLS.ino
-  ├── libraries
-  Raspberry/
-  ├── main.py
-  ├── GUI.py
-  ├── IMU.py
-  ├── face_tracking.py
-  ├── auto_navigation.py
-  ├── requirements.txt
-  └── README.md
-```
-
-## User Interface Controls
-IMPORTANT: accommodated for Raspberry's Thonny (Python IDE).
-
-Inside the Raspberry folder it provides the interface for the control system via web-based GUI Control. 
-
+# Overview
+This 106 robot is designed specifically for agricultural applications. Its primary function is to serve as a mobile tank and irrigation system, capable of transporting and dispensing water or other liquids as needed. The robot features a [basic control system](#User-Controls) that enables reliable operation in various field conditions, making it a practical tool for supporting farm-level automation and improving irrigation efficiency. 
+IMPORTANT: accommodated for Raspberry's Thonny (Python IDE) and the FlySky FS-i6X(controller).
 ### Features
 - Basic Movement
-- Autonomous Movement **(In Development)**
-- GPS Tracking
-- Camera View
 - Pump Controls
+- Website Features:
+  - Autonomous Movement **(In Development)**
+  - GPS Tracking
+  - Camera View
 
-### Requirements & Dependencies
-Communication between the Raspberry Pi and the robot's physical componenet are through a dedicated router.
-#### MQTT Configuration
-This are the current configuration (change if needed):
-- MQTT_SERVER = "192.168.1.145"  
-- MQTT_PORT = 1883
-- MQTT_TOPIC_COMMAND = "robot/control"
-- MQTT_RAIL_TOPIC_COMMAND = "robot/rail"
-- MQTT_TOPIC_DETECTIONS = "robot/detections"
-- MQTT_TOPIC_CAMERA = "robot/camera"
-- MQTT_TOPIC_PUMP = "robot/pump"
-- MQTT_TOPIC_REMOTE_PUMP = "robot/remotepump"
-- MQTT_TOPIC_IMU = "imu/data"
-- MQTT_TOPIC_DATA = "moisture/data"
-
-### Initializing
-TO-DO: 
-  - Video showcase on how-to
-  - Code explantion within a wifi connection and a terminal
 
 ## Arduino Component
 This is the software that relates to our **ESP32**. Its the **Central Control System** for every component to the robot.
 Recieves commands from:
-- Remote Control (Ibus/...)
+- Remote Control (Ibus/FlySky FS-i6X)
 - Raspberry Web User Interface
 Sends commands to:
 - Motors for movement control
 - Relay for Pump toggle
 
-... Put picture of pin locations
-... Explain further.
+**For More Detail** to handle and edit arduino go to:
+  [Arduino Folder](Arduino)
 
-### From Remote Control
+## User Controls
+### Using the Remote Control
 For the Remote control we utilize **4 inputs**:
 
   **IMPORTANT**: When turning on the power-switch all other switches must be facing up.
@@ -85,4 +50,21 @@ Located as the fourth switch at the top of the controller. This is what turns on
   - Pump OFF: is switch down(0)
 #### Movement-Stick: 
 Located at the middle-right of the controller. It is a joystick that control the movements of the robot. 
-### From Rasp Pi GUI
+
+### Using the Website Interface
+
+## 106 Robot Control System 
+This are all software components that relate to the **106 robot**.
+```  
+  Arduino/
+  ├── ESP32_DEV_CONTROLS.ino
+  ├── libraries
+  Raspberry/
+  ├── main.py
+  ├── GUI.py
+  ├── IMU.py
+  ├── face_tracking.py
+  ├── auto_navigation.py
+  ├── requirements.txt
+  └── README.md
+```
