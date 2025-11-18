@@ -9,6 +9,21 @@ IMPORTANT: accommodated for Raspberry's Thonny (Python IDE) and the FlySky FS-i6
   - GPS Tracking
   - Camera View
 
+## 106 Robot Control System 
+This are all software components that relate to the **106 robot**.
+```  
+  Arduino/
+  ├── ESP32_DEV_CONTROLS.ino
+  ├── libraries
+  Raspberry/
+  ├── main.py
+  ├── GUI.py
+  ├── IMU.py
+  ├── face_tracking.py
+  ├── auto_navigation.py
+  ├── requirements.txt
+  └── README.md
+```
 
 ## Arduino Component
 This is the software that relates to our **ESP32**. Its the **Central Control System** for every component to the robot.
@@ -53,18 +68,3 @@ Located at the middle-right of the controller. It is a joystick that control the
 
 ### Using the Website Interface
 
-## 106 Robot Control System 
-This are all software components that relate to the **106 robot**.
-```  
-  Arduino/
-  ├── ESP32_DEV_CONTROLS.ino
-  ├── libraries
-  Raspberry/
-  ├── main.py
-  ├── GUI.py
-  ├── IMU.py
-  ├── face_tracking.py
-  ├── auto_navigation.py
-  ├── requirements.txt
-  └── README.md
-```
