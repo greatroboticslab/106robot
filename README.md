@@ -59,5 +59,30 @@ Sends commands to:
 ... Explain further.
 
 ### From Remote Control
+For the Remote control we utilize **4 inputs**:
 
+  **IMPORTANT**: When turning on the power-switch all other switches must be facing up.
+<p align="center">
+<img src="Images/Control_Overview.png" width="650" align="Center">
+</p>
+
+#### Power-switch: 
+Located at the bottom-right of the controller. This is what turns on/off the controller.
+#### Armed-switch: 
+Located as the first switch at the top of the controller. This is the safety switch that allow to use the components.
+  - Labeled as: **SWA** 
+  - Armed ON: is switch up(100)
+  - Armed OFF: is switch down(0)
+#### Mode-switch: 
+Located as the second switch at the top of the controller. Allows who has priority of the robot, Either Controller or Website but not both.
+  - Labeled as: **SWB**
+  - Mode Controller: is switch up(100)
+  - Mode Website:    is switch down(0)
+#### Pump-switch: 
+Located as the fourth switch at the top of the controller. This is what turns on/off the pump.
+  - Labeled as: **SWD**
+  - Pump ON: is switch up(100)
+  - Pump OFF: is switch down(0)
+#### Movement-Stick: 
+Located at the middle-right of the controller. It is a joystick that control the movements of the robot. 
 ### From Rasp Pi GUI
