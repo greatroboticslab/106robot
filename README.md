@@ -75,4 +75,29 @@ To be able to use the GUI we must first connect to its WiFi connection
 
 Since the robot's GUI website runs on a local server created by the Raspberry Pi we just use this link:
 **http://192.168.1.145:5000/**
+
+
 #### User Interface
+<p align="center">
+<img src="Images/GUI_Overview.png" width="650" align="Center">
+</p>
+
+**Important**: Connect to the WiFi [downRobotRoom](#WiFi-and-Connections) first before accessing the website(**http://192.168.1.145:5000/**). To allow website access to the robot components, we must interact with the [controller](#user-controls) by switching its mode to website.
+
+#### Movement Buttons: 
+Located at the middle-right of the website and marked as movement controls, its the interface for movement control.
+<p align="center">
+<img src="Images/Movement_Controls.png" width="200" align="Center">
+</p>
+
+The Five buttons can be control by certain keys as well:
+- Forward: "w" key
+- Reverse: "s" key
+- Left: "a" key
+- Right: "d" key
+- Stop: spacebar key 
+#### Pump ON/OFF Buttons: 
+Located at the bottom-left of the screen, two buttons that control the pumps.
+<p align="center">
+<img src="Images/Pump_Controls.png" width="200" align="Center">
+</p>
