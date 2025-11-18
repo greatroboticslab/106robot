@@ -1,6 +1,7 @@
 # Overview
 This 106 robot is designed specifically for agricultural applications. Its primary function is to serve as a mobile tank and irrigation system, capable of transporting and dispensing water or other liquids as needed. The robot features a [basic control system](#User-Controls) that enables reliable operation in various field conditions, making it a practical tool for supporting farm-level automation and improving irrigation efficiency. 
-IMPORTANT: accommodated for Raspberry's Thonny (Python IDE) and the FlySky FS-i6X(controller).
+
+**IMPORTANT**: accommodated for Raspberry's Thonny (Python IDE) and the FlySky FS-i6X(controller).
 ### Features
 - Basic Movement
 - Pump Controls
