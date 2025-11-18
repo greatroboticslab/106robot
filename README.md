@@ -67,4 +67,10 @@ Located as the fourth switch at the top of the controller. This is what turns on
 Located at the middle-right of the controller. It is a joystick that control the movements of the robot. 
 
 ### Using the Website Interface
-
+To be able to use the GUI we must first connect to its WiFi connection
+#### WiFi and Connections
+- **WiFi name**: downRobotRoom
+- **Password**:  robotsRcool
+Since the robot's GUI website runs on a local server created by the Raspberry Pi we just use this link:
+- (http://192.168.1.145:5000/)[http://192.168.1.145:5000/]
+#### User Interface
