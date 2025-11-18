@@ -91,13 +91,13 @@ Located at the middle-right of the website and marked as movement controls, its 
 </p>
 
 The Five buttons can be control by certain keys as well:
-- Forward: "w" key
-- Reverse: "s" key
-- Left: "a" key
-- Right: "d" key
-- Stop: spacebar key 
+- **Forward**: "w" key
+- **Reverse**: "s" key
+- **Left**: "a" key
+- **Right**: "d" key
+- **Stop**: spacebar key 
 #### Pump ON/OFF Buttons: 
 Located at the bottom-left of the screen, two buttons that control the pumps.
 <p align="center">
-<img src="Images/Pump_Controls.png" width="200" align="Center">
+<img src="Images/Pump_Controls.png" width="400" align="Center">
 </p>
