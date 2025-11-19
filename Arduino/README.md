@@ -4,7 +4,9 @@ This is an extended README for any new editing for the ESP32. This ESP32 is the 
 
 ## Wiring
 This is the current Wiring for the Esp32
-...Photo Here...
+<p align="center">
+<img src="Images/Wiring.JPG" width="400" align="Center">
+</p>
 
 ## Setup For editing
 If any editing must be done to the ESP32 then:
