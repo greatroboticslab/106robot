@@ -10,34 +10,6 @@ This 106 robot is designed specifically for agricultural applications. Its prima
   - GPS Tracking
   - Camera View
 
-## 106 Robot Control System 
-This are all software components that relate to the **106 robot**.
-```  
-  Arduino/
-  ├── ESP32_DEV_CONTROLS.ino
-  ├── libraries
-  Raspberry/
-  ├── main.py
-  ├── GUI.py
-  ├── IMU.py
-  ├── face_tracking.py
-  ├── auto_navigation.py
-  ├── requirements.txt
-  └── README.md
-```
-
-## Arduino Component
-This is the software that relates to our **ESP32**. Its the **Central Control System** for every component to the robot.
-Recieves commands from:
-- Remote Control (Ibus/FlySky FS-i6X)
-- Raspberry Web User Interface
-Sends commands to:
-- Motors for movement control
-- Relay for Pump toggle
-
-**For More Detail** to handle and edit arduino go to:
-  [Arduino Folder](Arduino)
-
 ## User Controls
 ### Using the Remote Control
 For the Remote control we utilize **4 inputs**:
@@ -101,3 +73,63 @@ Located at the bottom-left of the screen, two buttons that control the pumps.
 <p align="center">
 <img src="Images/Pump_Controls.png" width="400" align="Center">
 </p>
+
+
+## 106 Robot Control System 
+This are all software components that relate to the **106 robot**.
+```  
+  Arduino/
+  ├── ESP32_DEV_CONTROLS.ino
+  ├── libraries
+  Raspberry/
+  ├── main.py
+  ├── GUI.py
+  ├── IMU.py
+  ├── face_tracking.py
+  ├── auto_navigation.py
+  requirements.txt
+```
+
+## Arduino Component
+This is the software that relates to our **ESP32**. Its the **Central Control System** for every component to the robot.
+Recieves commands from:
+- Remote Control (Ibus/FlySky FS-i6X)
+- Raspberry Web User Interface
+Sends commands to:
+- Motors for movement control
+- Relay for Pump toggle
+
+### Setup For editing
+If any editing must be done to the ESP32 then:
+- Arduino IDE most be downloaded
+- The appropiate libraries need to be downloaded(Given in the library folder):
+  - IBusBM (v.2.0.18-arduino.5)
+  - PubSubClient (v.2.0.6)
+  - roboclaw_arduino_library-master
+- The board "esp32" by Espressif System at version 2.0.6 must be install.
+
+**Important**: The libraries should not be always be at their latest version, but the specified version detailed here.
+
+Then to actually upload any code you must connect the ESP32 (WARNING: THE ROBOT or ESP32 must be off). Applied "esp32 dev1" board and hit send.
+
+Video if needed: https://www.youtube.com/watch?v=CD8VJl27n94&t=225s
+
+## Raspberry Component
+
+#### Getting Started 
+To make use of the Raspberry Pi without trying to play with it directly we can access it virtually with our own devices.
+1. First we must be connected to the same wifi.
+    - **WiFi name**: downRobotRoom
+    - **Password**:  robotsRcool
+
+2. Second we must enter our own computers terminal, within it we input the code:
+
+```
+bash
+ssh ormo-bot@192.169.1.145
+Password: Robot
+
+```
+3. Third is up to the developer to edit. A full explanation on how to use ssh is lengthy, here is a playlist explaining how to use it.
+
+[Using SSH to access Raspberry PI](https://www.youtube.com/watch?v=aCGbQB8K8T8&list=PLg8DhjCcwNIUJHBY2gwcLh3A9UxUwOROL)
