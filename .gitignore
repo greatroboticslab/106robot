@@ -60,3 +60,4 @@ secret_key.txt
 
 # Keep data files tracked by default; add specific ignores here if desired
 # e.g., data/*.csv
+Images/106_Tutorial.mp4

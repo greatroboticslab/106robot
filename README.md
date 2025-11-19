@@ -99,6 +99,12 @@ Sends commands to:
 - Motors for movement control
 - Relay for Pump toggle
 
+## Wiring
+This is the current Wiring for the Esp32
+<p align="center">
+<img src="Images/Wiring.JPG" width="400" align="Center">
+</p>
+
 ### Setup For editing
 If any editing must be done to the ESP32 then:
 - Arduino IDE most be downloaded
