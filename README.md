@@ -130,7 +130,6 @@ To make use of the Raspberry Pi without trying to play with it directly we can a
 Password:
 ```
 >Robot
-
 ```
 3. Third is up to the developer to edit. A full explanation on how to use ssh is lengthy, here is a playlist explaining how to use it.
 
