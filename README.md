@@ -131,11 +131,11 @@ To make use of the Raspberry Pi without trying to play with it directly we can a
 2. Second we must enter our own computers terminal, within it we input the code:
 
 ```
-ssh ormo-bot@192.169.1.145
+osmo-bot@100.123.88.122
 ```
 Password:
 ```
-Robot
+robot
 ```
 3. Third is up to the developer to edit. A full explanation on how to use ssh is lengthy, here is a playlist explaining how to use it.
 
