@@ -18,8 +18,8 @@
 // Constants & Global Varuable
 //    Pins (Constants)
 const int PUMP_PIN = 22;
-const int ROBOCLAW_TX_PIN = 17;     // TX2 → RoboClaw RX
-const int IBUS_RX_PIN = 16;          // RX2 ← iBus signal
+// const int ROBOCLAW_TX_PIN = 17;     // TX2 → RoboClaw RX
+// const int IBUS_RX_PIN = 16;          // RX2 ← iBus signal
 //    Motor Comands (Constants)
 const int STOP_COMMAND = 64;
 const int MAX_COMMAND  = 128;
