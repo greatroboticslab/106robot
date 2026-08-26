@@ -8,9 +8,8 @@
 #include <RoboClaw.h>
 #include <IBusBM.h>
 
-// Description: This is the program for an Esp 32 Dev. It gets signals
-//              from a remote control(IBUS) or a server(MQTT).
-//              SWB selects which one is in charge.
+// Description: This is the program for an Esp 32 Dev. It gets signals from
+//              a remote control(IBUS) or a server(MQTT). SWB picks which.
 // Aditional:   To upload we use the board "ESP32 Dev Module",
 //              Pin Locations:  Pump Relay:        GPIO22
 //                              Motors(RoboClaw):  TX2 (GPIO17)
@@ -41,7 +40,8 @@ const int RAW_CENTER     = 1500;  // fallback centre if calibration fails
 const int RAW_DEADZONE   = 40;    // us either side of centre, widen if jittery
 const int CENTER_MAX_ERR = 250;   // reject a calibration further than this from 1500
 const int PUMP_ON_LEVEL  = 50;    // pump on when mapped value exceeds this
-const int LINK_TIMEOUT   = 200;   // ms without an iBus frame before failsafe
+const int MODE_ON_LEVEL  = 60;    // web mode above this, see note in loop()
+const int LINK_TIMEOUT   = 200;   // ms without a frame before failsafe
 const bool INVERT_RIGHT  = false; // set true if the right motor runs backwards
 
 //    MQTT timing (Constants)
@@ -53,9 +53,8 @@ int centerSteer = RAW_CENTER;
 int centerDrive = RAW_CENTER;
 
 //    Mode state (Global Variables)
-int mode = 0;              // 0 = manual (iBus), non-zero = web (MQTT)
-int lastMode = 0;          // used to detect a mode change
-
+bool webMode     = false;   // false = iBus remote, true = MQTT server
+bool lastWebMode = false;   // used to detect a mode change
 
 // ==================== Wifi & MQTT Server details ====================
 // WiFi credentials
@@ -72,8 +71,9 @@ const char* MQTT_PUMP_CMD = "robot/pump";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-uint32_t lastMqttAttempt = 0;   // millis of the last reconnect attempt
-uint32_t lastMqttCommand = 0;   // millis of the last accepted move command
+bool     wifiStarted     = false;  // WiFi is started lazily, see startWiFi()
+uint32_t lastMqttAttempt = 0;      // millis of the last reconnect attempt
+uint32_t lastMqttCommand = 0;      // millis of the last accepted move command
 // ====================================================================
 
 // ======================== RoboClaw details ==========================
@@ -100,6 +100,7 @@ int readChannel(byte channelInput, int minLimit, int maxLimit, int defaultValue)
 void calibrateSticks();
 void ibusLoop();
 void mqttLoop();
+void startWiFi();
 void reconnect();
 void callback(char* topic, byte* payload, unsigned int length);
 int  stickToSpeed(uint16_t raw, int center);
@@ -143,17 +144,13 @@ void setup()
 
   calibrateSticks();
 
-  // Initialize WiFi + MQTT
-  // NOTE: WiFi is started but NOT waited on. Blocking here would stall the
-  //       iBus loop, and the remote must work whether or not the AP is up.
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  Serial.println("WiFi started (connecting in background).");
-
+  // NOTE: WiFi is deliberately NOT started here. It is started the first
+  //       time SWB selects web mode. Nothing in the network stack is
+  //       allowed to run while the remote is driving.
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
   client.setSocketTimeout(2);   // seconds, keeps a dead broker from stalling us
-  Serial.println("MQTT initialized.");
+  Serial.println("MQTT configured (idle until web mode).");
 
   stopMotors();                 // Ensure motors are stopped
   Serial.println("Motors stopped. System ready.");
@@ -163,17 +160,21 @@ void loop()
 {
   ibus.loop();   // FIRST, every iteration, in BOTH modes, no exceptions
 
-  mode = readChannel(CH_MODE, 0, 100, 0);   // CH6 SWB
+  // NOTE: the threshold is 60, not 0. An UNASSIGNED channel sits at 1500,
+  //       which maps to exactly 50, so a mistakenly unassigned SWB leaves
+  //       us safely in remote mode instead of silently handing control
+  //       to a server that may not be there.
+  webMode = (readChannel(CH_MODE, 0, 100, 0) > MODE_ON_LEVEL);
 
   // Stop everything on a mode change so nothing carries over
-  if (mode != lastMode) {
+  if (webMode != lastWebMode) {
     stopMotors();
     pumpControls(false);
-    lastMode = mode;
-    Serial.println(mode != 0 ? "--> WEB (MQTT) mode" : "--> CONTROLLER (iBus) mode");
+    lastWebMode = webMode;
+    Serial.println(webMode ? "--> WEB (MQTT) mode" : "--> CONTROLLER (iBus) mode");
   }
 
-  if (mode != 0) {
+  if (webMode) {
     mqttLoop();   // Check callback() for MQTT interaction with components
   } else {
     ibusLoop();   // Check ibusLoop() for full ibus interaction with components
@@ -276,21 +277,24 @@ void ibusLoop()
 }
 
 // Description: Non-blocking MQTT service. Keeps the connection alive and
-//              stops the robot if commands go quiet.
+//              stops the robot if commands go quiet. Only ever called
+//              while SWB selects web mode.
 // Input:   NONE
 // Output:  NONE
 void mqttLoop()
 {
+  startWiFi();   // no-op after the first call
+
   if (WiFi.status() != WL_CONNECTED) {
     stopMotors();
     pumpControls(false);
-    return;                       // WiFi library retries on its own
+    return;                       // WiFi library keeps retrying on its own
   }
 
   if (!client.connected()) {
     stopMotors();
     pumpControls(false);
-    // Retry on a timer instead of blocking, connect() can still stall
+    // Retry on a timer instead of every pass, connect() can still stall
     // for up to the socket timeout when the broker is unreachable.
     if (millis() - lastMqttAttempt > MQTT_RETRY_MS) {
       lastMqttAttempt = millis();
@@ -307,6 +311,20 @@ void mqttLoop()
   }
 }
 
+// Description: Brings up WiFi the first time web mode is selected.
+//              Deliberately does not wait for a connection.
+// Input:   NONE
+// Output:  NONE
+void startWiFi()
+{
+  if (wifiStarted) { return; }
+  wifiStarted = true;
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("WiFi started (connecting in background).");
+}
+
 // Description: MQTT interaction with components (movement, pump)
 // Input:   topic's message, its payload, and length of message
 // Output:  NONE
@@ -314,7 +332,7 @@ void callback(char* topic, byte* payload, unsigned int length)
 {
   // IMPORTANT: Ibus (Remote Control) takes priority. SWB must be down
   //            for MQTT to take over control.
-  if (mode == 0) { return; }
+  if (!webMode) { return; }
 
   // Convert payload to String once
   String message;
@@ -329,7 +347,7 @@ void callback(char* topic, byte* payload, unsigned int length)
   // FOR: motor
   if (strcmp(topic, MQTT_MOVE_CMD) == 0) {
     // NOTE: the payload is "turn forward", the turn value comes FIRST.
-    //       Make sure the server sends it in that order.
+    //       Confirm the Raspberry Pi publishes it in that order.
     int spaceIndex = message.indexOf(' ');
     if (spaceIndex == -1) {
       Serial.println("Invalid message format. Expected 'turn forward'.");
