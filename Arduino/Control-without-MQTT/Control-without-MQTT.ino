@@ -3,14 +3,12 @@
   =========================================*/
 
 // Libraries:
-#include <WiFi.h>
-#include <PubSubClient.h>
 #include <RoboClaw.h>
 #include <IBusBM.h>
 
-// Description: This is the program for an Esp 32 Dev. It gets signals
-//              from a remote control(IBUS) or a server(MQTT).
-//              SWB selects which one is in charge.
+// Description: Remote-control-only build for an Esp 32 Dev. Reads the RC
+//              remote over iBus and drives the two RoboClaws plus the pump
+//              relay. WiFi / MQTT are added in a later step.
 // Aditional:   To upload we use the board "ESP32 Dev Module",
 //              Pin Locations:  Pump Relay:        GPIO22
 //                              Motors(RoboClaw):  TX2 (GPIO17)
@@ -25,15 +23,12 @@ const int IBUS_RX_PIN     = 16;   // RX2 <- iBus signal
 
 //    Motor Commands (Constants)
 const int STOP_COMMAND = 64;      // RoboClaw 0-127, 64 is stop
-const int MAX_COMMAND  = 128;
-const int MIN_COMMAND  = 0;
 const long ROBOCLAW_BAUD = 38400;
 
 //    Ibus channel indexes (Constants) - ZERO based, index 0 = physical CH1
 const byte CH_STEER = 0;   // CH1  Left / Right
 const byte CH_DRIVE = 1;   // CH2  Forward / Back
 const byte CH_ARM   = 4;   // CH5  SWA
-const byte CH_MODE  = 5;   // CH6  SWB  (up = manual/iBus, down = web/MQTT)
 const byte CH_PUMP  = 7;   // CH8  SWD
 
 //    Tuning (Constants)
@@ -41,40 +36,12 @@ const int RAW_CENTER     = 1500;  // fallback centre if calibration fails
 const int RAW_DEADZONE   = 40;    // us either side of centre, widen if jittery
 const int CENTER_MAX_ERR = 250;   // reject a calibration further than this from 1500
 const int PUMP_ON_LEVEL  = 50;    // pump on when mapped value exceeds this
-const int LINK_TIMEOUT   = 200;   // ms without an iBus frame before failsafe
+const int LINK_TIMEOUT   = 200;   // ms without a frame before failsafe
 const bool INVERT_RIGHT  = false; // set true if the right motor runs backwards
-
-//    MQTT timing (Constants)
-const uint32_t MQTT_RETRY_MS   = 5000;  // gap between reconnect attempts
-const uint32_t MQTT_TIMEOUT_MS = 1500;  // no command for this long -> stop
 
 //    Stick centres (Global Variables) - measured at boot by calibrateSticks()
 int centerSteer = RAW_CENTER;
 int centerDrive = RAW_CENTER;
-
-//    Mode state (Global Variables)
-int mode = 0;              // 0 = manual (iBus), non-zero = web (MQTT)
-int lastMode = 0;          // used to detect a mode change
-
-
-// ==================== Wifi & MQTT Server details ====================
-// WiFi credentials
-const char* ssid = "downRobotRoom";         // Replace with your WiFi SSID
-const char* password = "robotsRcool";       // Replace with your WiFi password
-// MQTT server details
-const char* mqtt_server = "192.168.1.145";  // Replace with the IP address of your Raspberry Pi
-const int mqtt_port = 1883;                 // Default MQTT port
-
-// Define the MQTT topic to subscribe to
-const char* MQTT_MOVE_CMD = "robot/control";
-const char* MQTT_PUMP_CMD = "robot/pump";
-
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-uint32_t lastMqttAttempt = 0;   // millis of the last reconnect attempt
-uint32_t lastMqttCommand = 0;   // millis of the last accepted move command
-// ====================================================================
 
 // ======================== RoboClaw details ==========================
 RoboClaw roboclaw(&Serial1, 10000);  // 2nd arg is TIMEOUT in microseconds
@@ -99,19 +66,15 @@ int readChannel(byte channelInput, int minLimit, int maxLimit, int defaultValue)
 // --------------------- Function prototypes --------------------------
 void calibrateSticks();
 void ibusLoop();
-void mqttLoop();
-void reconnect();
-void callback(char* topic, byte* payload, unsigned int length);
 int  stickToSpeed(uint16_t raw, int center);
 bool ibusLinkOk();
-void setMotorSpeeds(int forwardCmd, int turnCmd);
 void pumpControls(bool isON);
 int  change_right(int speed);
 void stopMotors();
 void printDebug(int drive, int turn, int arm, int LSpeed, int RSpeed, bool pumpOn, bool linkOk);
 
 
-// ================== Setup, Loop, and Callback =======================
+// ======================== Setup and Loop ============================
 void setup()
 {
   /* Debugging: RoboClaw is on Serial1 (GPIO17), so Serial 0 is free.
@@ -143,41 +106,14 @@ void setup()
 
   calibrateSticks();
 
-  // Initialize WiFi + MQTT
-  // NOTE: WiFi is started but NOT waited on. Blocking here would stall the
-  //       iBus loop, and the remote must work whether or not the AP is up.
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  Serial.println("WiFi started (connecting in background).");
-
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-  client.setSocketTimeout(2);   // seconds, keeps a dead broker from stalling us
-  Serial.println("MQTT initialized.");
-
   stopMotors();                 // Ensure motors are stopped
   Serial.println("Motors stopped. System ready.");
 }
 
 void loop()
 {
-  ibus.loop();   // FIRST, every iteration, in BOTH modes, no exceptions
-
-  mode = readChannel(CH_MODE, 0, 100, 0);   // CH6 SWB
-
-  // Stop everything on a mode change so nothing carries over
-  if (mode != lastMode) {
-    stopMotors();
-    pumpControls(false);
-    lastMode = mode;
-    Serial.println(mode != 0 ? "--> WEB (MQTT) mode" : "--> CONTROLLER (iBus) mode");
-  }
-
-  if (mode != 0) {
-    mqttLoop();   // Check callback() for MQTT interaction with components
-  } else {
-    ibusLoop();   // Check ibusLoop() for full ibus interaction with components
-  }
+  ibus.loop();   // FIRST, every iteration, no exceptions
+  ibusLoop();    // Check ibusLoop() for full ibus interaction with components
 }
 // ====================================================================
 
@@ -275,84 +211,6 @@ void ibusLoop()
   // no delay() here, ibus.loop() must keep up with 7 ms frames
 }
 
-// Description: Non-blocking MQTT service. Keeps the connection alive and
-//              stops the robot if commands go quiet.
-// Input:   NONE
-// Output:  NONE
-void mqttLoop()
-{
-  if (WiFi.status() != WL_CONNECTED) {
-    stopMotors();
-    pumpControls(false);
-    return;                       // WiFi library retries on its own
-  }
-
-  if (!client.connected()) {
-    stopMotors();
-    pumpControls(false);
-    // Retry on a timer instead of blocking, connect() can still stall
-    // for up to the socket timeout when the broker is unreachable.
-    if (millis() - lastMqttAttempt > MQTT_RETRY_MS) {
-      lastMqttAttempt = millis();
-      reconnect();
-    }
-    return;
-  }
-
-  client.loop();   // Check callback() for MQTT interaction with components
-
-  // Failsafe: the server must keep sending, otherwise we stop
-  if (millis() - lastMqttCommand > MQTT_TIMEOUT_MS) {
-    stopMotors();
-  }
-}
-
-// Description: MQTT interaction with components (movement, pump)
-// Input:   topic's message, its payload, and length of message
-// Output:  NONE
-void callback(char* topic, byte* payload, unsigned int length)
-{
-  // IMPORTANT: Ibus (Remote Control) takes priority. SWB must be down
-  //            for MQTT to take over control.
-  if (mode == 0) { return; }
-
-  // Convert payload to String once
-  String message;
-  for (unsigned int i = 0; i < length; i++) { message += (char)payload[i]; }
-
-  // FOR: pump
-  if (strcmp(topic, MQTT_PUMP_CMD) == 0) {
-    pumpControls(message == "1");
-    return;
-  }
-
-  // FOR: motor
-  if (strcmp(topic, MQTT_MOVE_CMD) == 0) {
-    // NOTE: the payload is "turn forward", the turn value comes FIRST.
-    //       Make sure the server sends it in that order.
-    int spaceIndex = message.indexOf(' ');
-    if (spaceIndex == -1) {
-      Serial.println("Invalid message format. Expected 'turn forward'.");
-      stopMotors();
-      return;
-    }
-
-    int turnCmd    = message.substring(0, spaceIndex).toInt();
-    int forwardCmd = message.substring(spaceIndex + 1).toInt();
-
-    // Validate command ranges
-    if (forwardCmd < MIN_COMMAND || forwardCmd > MAX_COMMAND ||
-        turnCmd    < MIN_COMMAND || turnCmd    > MAX_COMMAND) {
-      Serial.println("Command values out of range. Expected 0-128.");
-      stopMotors();
-      return;
-    }
-
-    lastMqttCommand = millis();   // feed the failsafe
-    setMotorSpeeds(forwardCmd, turnCmd);
-  }
-}
-
 // Description: Converts a raw iBus stick value into a signed speed offset
 // Input:   Raw channel value in microseconds, and that stick's centre
 // Output:  Signed speed -63 to +63, where 0 is stop
@@ -380,29 +238,6 @@ bool ibusLinkOk()
   return (millis() - lastCntTime) < LINK_TIMEOUT;
 }
 
-// Description: Sets the motor speeds based on forward and turn commands.
-//              Uses the same mixing as the iBus path so both control
-//              modes behave identically.
-// Input:   forwardCmd Forward command value (0-128), where 64 is stop.
-//          turnCmd Turn command value (0-128), where 64 is no turn.
-// Output:  NONE
-void setMotorSpeeds(int forwardCmd, int turnCmd)
-{
-  int drive = forwardCmd - STOP_COMMAND;   // Range: -64 to +64
-  int turn  = turnCmd    - STOP_COMMAND;   // Range: -64 to +64
-
-  int LSpeed = constrain(STOP_COMMAND + drive + turn, 1, 127);
-  int RSpeed = constrain(STOP_COMMAND + drive - turn, 1, 127);
-
-  if (abs(LSpeed - STOP_COMMAND) <= 1) { LSpeed = STOP_COMMAND; }
-  if (abs(RSpeed - STOP_COMMAND) <= 1) { RSpeed = STOP_COMMAND; }
-
-  if (INVERT_RIGHT) { RSpeed = change_right(RSpeed); }
-
-  roboclaw.ForwardBackwardM1(ROBOCLAW_ADDRESS_LEFT,  LSpeed);
-  roboclaw.ForwardBackwardM1(ROBOCLAW_ADDRESS_RIGHT, RSpeed);
-}
-
 // Description: Turns the relay for the pump ON or OFF
 // Input:   Boolean, is it ON or OFF
 // Output:  NONE
@@ -426,23 +261,6 @@ void stopMotors()
 {
   roboclaw.ForwardBackwardM1(ROBOCLAW_ADDRESS_LEFT,  STOP_COMMAND);
   roboclaw.ForwardBackwardM1(ROBOCLAW_ADDRESS_RIGHT, STOP_COMMAND);
-}
-
-// Description: Reconnects to the MQTT broker if disconnected.
-// Input:   NONE
-// Output:  NONE
-void reconnect()
-{
-  Serial.print("Attempting MQTT connection... ");
-
-  if (client.connect("ESP32Client1", "robot", "robot1")) {
-    Serial.println("connected");
-    client.subscribe(MQTT_MOVE_CMD);
-    client.subscribe(MQTT_PUMP_CMD);
-  } else {
-    Serial.print("failed, rc=");
-    Serial.println(client.state());
-  }
 }
 
 // Description: Throttled debug output, does not block the ibus loop
