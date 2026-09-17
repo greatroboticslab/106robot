@@ -424,7 +424,7 @@ html_content='''
       try {
         const response = await fetch('moisture_data.csv'); // URL to your CSV
         const data = await response.text();
-        const rows = data.trim().split('\n');
+        const rows = data.trim().split('/\r?\n/');
         const latestRow = rows[1]; // skip header
         const value = latestRow.split(',')[1];
         document.getElementById('csv-value').textContent = value;
